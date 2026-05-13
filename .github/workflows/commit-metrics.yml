@@ -1,0 +1,83 @@
+name: Commit Metrics by Sprint
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Opcional: roda uma vez por dia
+  schedule:
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  collect-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Avoid infinite loop (skip if bot already updated metrics)
+        id: skip_if_bot
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A action só roda de novo caso o workflow dispatch/push ocorra.
+          # Aqui prevenimos o commit de métricas caso o último commit já seja do bot.
+          LAST_COMMIT_SHA="$(git rev-parse HEAD)"
+          LAST_AUTHOR="$(git log -1 --pretty=format:%an)"
+          if [[ "$LAST_AUTHOR" == "github-actions[bot]" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.skip_if_bot.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.skip_if_bot.outputs.skip != 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run metrics script
+        if: steps.skip_if_bot.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          OUTPUT_JSON: metrics/commits_by_sprint.json
+        run: |
+          python scripts/collect_sprint_metrics.py
+
+      - name: Commit and push JSON (only if changed)
+        if: steps.skip_if_bot.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Configura usuário do commit
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Verifica se o arquivo mudou
+          if git status --porcelain | grep -q "metrics/commits_by_sprint.json"; then
+            git add metrics/commits_by_sprint.json
+            git commit -m "chore: update commits_by_sprint.json"
+
+            # Faz push de forma explícita para a branch atual.
+            # Isso evita inconsistências com o checkout/HEAD.
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "Nenhuma alteração detectada em metrics/commits_by_sprint.json"
+          fi
+
+
