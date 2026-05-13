@@ -28,12 +28,38 @@ def to_iso_utc(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def parse_github_datetime(value: str) -> datetime:
-    # GitHub retorna timestamps ISO 8601
-    dt = date_parser.isoparse(value)
+def parse_github_datetime(value) -> datetime:
+    """Normaliza datetime retornado pela API do GitHub.
+
+    Aceita:
+    - datetime.datetime
+    - strings ISO 8601
+    - None (vai para UTC atual)
+
+    Não altera a lógica de sprint; apenas garante que `dt` seja sempre timezone-aware em UTC.
+    """
+    if value is None:
+        # Evita crash caso algum commit venha sem author date.
+        print("[WARN] commit sem data (None). Usando datetime.now(UTC).")
+        return datetime.now(timezone.utc)
+
+    if isinstance(value, datetime):
+        dt = value
+    elif isinstance(value, str):
+        try:
+            dt = date_parser.isoparse(value)
+        except Exception as e:
+            print(f"[WARN] falha ao parsear data ISO '{value}': {e}. Usando datetime.now(UTC).")
+            return datetime.now(timezone.utc)
+    else:
+        print(f"[WARN] tipo inesperado para data: {type(value)}. Usando datetime.now(UTC).")
+        return datetime.now(timezone.utc)
+
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt
+
+    return dt.astimezone(timezone.utc)
+
 
 
 def first_commit_datetime(commits) -> Optional[datetime]:
