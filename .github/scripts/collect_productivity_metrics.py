@@ -7,10 +7,14 @@ from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List
 
 try:
-    from github import Github  # type: ignore
+    # PyGithub v2+ separates authentication in `Auth`.
+    # Using `Github(token)` is deprecated and can lead to auth/permission issues.
+    from github import Github, Auth, GithubException  # type: ignore
 except ModuleNotFoundError:
     # Local execution without PyGithub installed. In GitHub Actions it will exist.
     Github = None  # type: ignore
+    Auth = None  # type: ignore
+    GithubException = Exception  # type: ignore
 
 
 COAUTHOR_RE = re.compile(
@@ -59,6 +63,13 @@ def _safe_username(login: str | None) -> str:
     return login or "ghost"
 
 
+def _write_fallback_metrics() -> None:
+    out_path = os.path.join("docs", "productivity", "metrics.json")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(empty_metrics(), f, ensure_ascii=False, indent=2)
+
+
 def main() -> None:
     out_path = os.path.join("docs", "productivity", "metrics.json")
 
@@ -70,14 +81,31 @@ def main() -> None:
         return
 
     token = os.environ.get("GITHUB_TOKEN")
-    if not token:
-        raise RuntimeError("Missing GITHUB_TOKEN")
-
     repo_full_name = os.environ.get("GITHUB_REPOSITORY")
-    if not repo_full_name:
-        raise RuntimeError("Missing GITHUB_REPOSITORY")
 
-    g = Github(token)
+    # Validate before creating the client:
+    # - prevents confusing 403 errors that are actually caused by missing/invalid token
+    # - keeps the script behavior deterministic in CI
+    if not token:
+        raise RuntimeError(
+            "Missing GITHUB_TOKEN (required to avoid 403 in private repos and to ensure proper API access)."
+        )
+    if not repo_full_name or "/" not in repo_full_name:
+        raise RuntimeError("Missing/invalid GITHUB_REPOSITORY. Expected format: owner/repo")
+
+    # Why 403 happened:
+    # - The workflow token may exist, but the client initialized with the deprecated auth style
+    #   can fail to send the right Authorization header depending on PyGithub version.
+    # - Additionally, GitHub Actions has workflow-level `permissions` that must allow reading.
+    #
+    # Why Auth.Token is necessary:
+    # - New PyGithub versions use an explicit auth object (`Auth.Token`) instead of `Github(token)`.
+    # - This is the recommended/forward-compatible method.
+    if Auth is None:
+        raise RuntimeError("PyGithub Auth is not available in this environment.")
+
+    auth = Auth.Token(token)
+    g = Github(auth=auth)
     repo = g.get_repo(repo_full_name)
 
     now = datetime.now(timezone.utc)
@@ -90,7 +118,6 @@ def main() -> None:
     issue_contrib: Dict[str, Dict[str, int]] = defaultdict(lambda: {"opened": 0, "closed": 0})
 
     # GitHub API: issues endpoint includes PRs; we filter by `pull_request` presence.
-    # Pagination via `per_page=100` and `get_issues` iterable.
     issues = repo.get_issues(state="all", sort="created", direction="desc")
     for iss in issues:
         if iss.pull_request is not None:
@@ -113,7 +140,6 @@ def main() -> None:
 
     # Commits + message histogram + heatmap + coauthors
     commit_hist: Dict[str, int] = {"0-20": 0, "21-50": 0, "51-100": 0, "101-200": 0, "200+": 0}
-    heat_days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
     heat_matrix = [[0] * 24 for _ in range(7)]
     # Coauthors per week (counts of matching lines)
     coauthors_per_week: Dict[str, int] = defaultdict(int)
@@ -130,8 +156,11 @@ def main() -> None:
             continue
         week = utc_iso_week_bucket(commit_date)
 
-        msg = getattr(c, "commit", None).get("message") if isinstance(getattr(c, "commit", None), dict) else getattr(c.commit, "message", "")
-        # PyGithub commit object: c.commit.message
+        msg = (
+            getattr(c, "commit", None).get("message")
+            if isinstance(getattr(c, "commit", None), dict)
+            else getattr(c.commit, "message", "")
+        )
         if not isinstance(msg, str):
             msg = ""
 
@@ -140,13 +169,11 @@ def main() -> None:
         commit_hist[bin_name] += 1
 
         hour = commit_date.astimezone(timezone.utc).hour
-        # datetime.weekday(): Monday=0..Sunday=6
         day_idx = commit_date.astimezone(timezone.utc).weekday()
         heat_matrix[day_idx][hour] += 1
 
         # coauthors lines
-        for m in COAUTHOR_RE.finditer(msg or ""):
-            # Spec: ignore invalid formats silently (regex already ensures validity)
+        for _m in COAUTHOR_RE.finditer(msg or ""):
             coauthors_per_week[week] += 1
 
         author_login = None
@@ -154,7 +181,6 @@ def main() -> None:
         if author and getattr(author, "login", None):
             author_login = author.login
         else:
-            # fall back to committer email (not available to map). keep ghost.
             author_login = None
         user = _safe_username(author_login)
         top_committers[user] += 1
@@ -163,28 +189,22 @@ def main() -> None:
     top_pr_authors_counts: Dict[str, int] = defaultdict(int)
     prs = repo.get_pulls(state="open", sort="created", direction="desc")
     for pr in prs:
-        # Count regardless of created date? Spec doesn't mandate; use open current list.
         user = _safe_username(getattr(pr.user, "login", None))
         top_pr_authors_counts[user] += 1
 
-    # Weeks axis: union of weeks found in issues opened/closed and coauthors
-    all_weeks = set(issues_per_week_opened.keys()) | set(issues_per_week_closed.keys()) | set(coauthors_per_week.keys())
-    # Also include weeks within window even if empty (acceptance criteria)
-    # Generate buckets from window_start to now by adding 1 week steps.
+    # Weeks axis: generate buckets from window_start to now.
+    # Keeps output stable even when there are no events.
+
     weeks_axis: List[str] = []
-    cur = window_start
-    # Align to Monday-ish by using ISO week bucket stepping (simple add 7 days).
-    cur = cur.replace(hour=0, minute=0, second=0, microsecond=0)
+    cur = window_start.replace(hour=0, minute=0, second=0, microsecond=0)
     while cur <= now:
         weeks_axis.append(utc_iso_week_bucket(cur))
         cur = cur + timedelta(weeks=1)
 
-    # Render counts in order
     issues_open_series = [issues_per_week_opened.get(w, 0) for w in weeks_axis]
     issues_closed_series = [issues_per_week_closed.get(w, 0) for w in weeks_axis]
     coauthors_series = [coauthors_per_week.get(w, 0) for w in weeks_axis]
 
-    # Rankings: top 10 or all if fewer
     def top_rows(d: Dict[str, int], limit: int = 10) -> List[Dict[str, Any]]:
         items = sorted(d.items(), key=lambda kv: kv[1], reverse=True)
         return [
@@ -193,10 +213,8 @@ def main() -> None:
         ]
 
     top_committers_rows = top_rows(top_committers, 10)
-
     top_pr_authors_rows = top_rows(top_pr_authors_counts, 10)
 
-    # top issue contributors by opened+closed
     issue_totals: Dict[str, int] = {u: v["opened"] + v["closed"] for u, v in issue_contrib.items()}
     sorted_users = sorted(issue_totals.items(), key=lambda kv: kv[1], reverse=True)
     limit = 10 if len(sorted_users) >= 10 else len(sorted_users)
@@ -239,10 +257,28 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        # Fail loud in CI; but keep a valid file to avoid breaking frontend.
-        sys.stderr.write(f"[collect_productivity_metrics] ERROR: {e}\n")
-        os.makedirs(os.path.join("docs", "productivity"), exist_ok=True)
-        with open(os.path.join("docs", "productivity", "metrics.json"), "w", encoding="utf-8") as f:
-            json.dump(empty_metrics(), f, ensure_ascii=False, indent=2)
+        # Improve error handling:
+        # - avoid huge tracebacks when the root cause is permission/auth (403)
+        # - keep metrics.json valid so the frontend doesn't break
+        err_msg = f"[collect_productivity_metrics] ERROR: {e}"
+
+        try:
+            if isinstance(e, GithubException):
+                status = getattr(e, "status", None)
+                if status == 403:
+                    err_msg = (
+                        "[collect_productivity_metrics] ERROR: 403 Forbidden from GitHub API. "
+                        "Check workflow `permissions` and ensure GITHUB_TOKEN is set and has access."
+                    )
+                elif status == 401:
+                    err_msg = (
+                        "[collect_productivity_metrics] ERROR: 401 Unauthorized from GitHub API. "
+                        "Check that GITHUB_TOKEN is valid and not empty."
+                    )
+        except Exception:
+            pass
+
+        sys.stderr.write(err_msg + "\n")
+        _write_fallback_metrics()
         raise
 
