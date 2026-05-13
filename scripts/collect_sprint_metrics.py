@@ -8,7 +8,8 @@ from typing import Dict, List, Optional
 
 
 from dateutil import parser as date_parser
-from github import Github
+from github import Auth, Github
+
 
 # 14 dias fixos
 SPRINT_DAYS = 14
@@ -74,25 +75,29 @@ def get_sprint_index(commit_dt: datetime, base_dt: datetime) -> int:
 
 
 def fetch_all_commits(repo, token: str) -> List[dict]:
-    """Busca todos os commits via API de commits.
+    """Busca todos os commits via API.
 
-    Observações:
-    - A API de commits tem paginação; PyGithub abstrai com paginação.
-    - Não usamos search commits para evitar limites e complexidade.
+    - Usa o gerador paginado do PyGithub (sem `all=True`, que não existe em todas as versões).
+    - Retorna uma lista completa de objetos de commit.
+    - Mantém tratamento básico de erros e logs úteis.
+
+    Observação: para repositórios muito grandes, buscar *todos* os commits pode consumir tempo.
     """
-    all_commits = []
-
-    # Para repositórios grandes, a listagem completa pode ser custosa.
-    # Tentamos buscar o máximo possível dentro de limites da API.
-    # Mesmo assim, manteremos um tratamento de erro básico.
     try:
-        commits = repo.get_commits(all=True)
-        for c in commits:
+        all_commits: List[dict] = []
+        print("Iniciando paginação de commits (PyGithub)...")
+
+        # `repo.get_commits()` retorna um PaginatedList no PyGithub.
+        # Ao iterar, o PyGithub faz as chamadas paginadas automaticamente.
+        commits_iter = repo.get_commits()
+        for c in commits_iter:
             all_commits.append(c)
+
+        print(f"Total de commits carregados: {len(all_commits)}")
+        return all_commits
     except Exception as e:
         raise RuntimeError(f"Falha ao buscar commits via API: {e}") from e
 
-    return all_commits
 
 
 def is_merge_commit(commit) -> bool:
@@ -131,10 +136,13 @@ def main() -> int:
         print("Variável de ambiente GITHUB_REPOSITORY inválida.", file=sys.stderr)
         return 2
 
-    # Inicializa cliente
-    g = Github(token)
-    owner, repo_name = repo_full_name.split("/", 1)
+    # Inicializa cliente (padrão mais novo do PyGithub)
+    # Auth.Token garante compatibilidade com GitHub Actions.
+    auth = Auth.Token(token)
+    g = Github(auth=auth)
+
     repo = g.get_repo(repo_full_name)
+
 
     output_path = os.getenv("OUTPUT_JSON", "metrics/commits_by_sprint.json")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
