@@ -16,6 +16,7 @@ nav:
   - Home:
       - Sobre o Projeto: index.md
       - Sobre Nos: sobrenos.md
+      - So um teste: teste.md
 
   - Requisitos:
       - Visão Geral: Requisitos.md
