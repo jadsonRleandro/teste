@@ -33,7 +33,7 @@ class r7_spider(scrapy.Spider):
 
 def play_wright():
     # Inicia o Playwright
-    data = str(datetime.now().strftime("%Y-%m-%d"))
+    data = '2026-06-10'
     urls = []
     with sync_playwright() as p:
 
