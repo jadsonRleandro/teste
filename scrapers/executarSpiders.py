@@ -4,8 +4,6 @@ from spiders.cnnspider import cnn_run_spider
 from spiders.r7spider import r7_run_spider
 from spiders.metropoles import metropoles_run_spider
 from salvarscrapys import salvar_todos_resultados
-import os
-os.environ.setdefault('SCRAPY_SETTINGS_MODULE', 'settings')
 
 def main():
     g1_scrapy = Process(target = g1_run_spider)
