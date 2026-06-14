@@ -14,7 +14,7 @@ class g1_spider(scrapy.Spider):
 
         data_da_publicacao = response.css('time').attrib['datetime']
         dia_da_publicacao = data_da_publicacao[8:10]
-
+        print("noticia: " + response.url)
         if(int(dia_da_publicacao) == date.today().day): # filtrando noticias apenas do dia
 
             alltext = response.css('article p *::text, article p::text').getall()
@@ -30,7 +30,7 @@ class g1_spider(scrapy.Spider):
                     'Portal': 'G1',
                     'Title': response.css('.content-head__title::text').get(),
                     'Time': response.css('time::text').get(),
-                    'Link': response.css('main > link').attrib['href'],
+                    'Link': rresponse.url,
                     'News': news
                 }
 
@@ -56,6 +56,7 @@ def play_writght():
             urls.append(news.get_attribute(name = "href"))
         
         browser.close()
+        print(urls)
 
     return urls
 
