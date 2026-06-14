@@ -14,7 +14,9 @@ class cnn_spider(scrapy.Spider):
 
     def parse(self, response, **kwargs):
         for news in response.css('ul figure'):
+            print('data cnn: ' + news.css('time').attrib['datetime'])
             if (self.data in news.css('time').attrib['datetime']):
+                print('noticia valida')
                 yield response.follow(news.css('a').attrib['href'], self.parse_pegar)
 
     def parse_pegar(self, response):
