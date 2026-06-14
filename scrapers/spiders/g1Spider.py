@@ -25,7 +25,7 @@ class g1_spider(scrapy.Spider):
 
 
         
-        if(int(dia_da_publicacao) == hoje_brasilia.day:# filtrando noticias apenas do dia
+        if(int(dia_da_publicacao) == hoje_brasilia.day):# filtrando noticias apenas do dia
             print("noticia valida")
             alltext = response.css('article p *::text, article p::text').getall()
 

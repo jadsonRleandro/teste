@@ -7,7 +7,7 @@ from datetime import datetime
 
 class cnn_spider(scrapy.Spider):
     name = 'CNN'
-    data = str(datetime.now().strftime("%Y-%m-%d"))
+    data = '2026-06-11'
 
     def start_requests(self):
         yield scrapy.Request('https://www.cnnbrasil.com.br/tudo-sobre/feminicidio/') # Fazendo requisição para o link de feminicidio
