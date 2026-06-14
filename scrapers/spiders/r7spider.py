@@ -4,6 +4,7 @@ from scrapy.utils.project import get_project_settings
 from playwright.sync_api import sync_playwright
 import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 class r7_spider(scrapy.Spider):
     name = 'r7'
@@ -33,6 +34,8 @@ class r7_spider(scrapy.Spider):
 
 def play_wright():
     # Inicia o Playwright
+    hoje_brasilia = datetime.now(ZoneInfo("America/Sao_Paulo"))
+    print(hoje_brasilia)
     data = '2026-06-10'
     urls = []
     with sync_playwright() as p:
