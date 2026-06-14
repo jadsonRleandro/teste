@@ -40,7 +40,7 @@ class g1_spider(scrapy.Spider):
                     'Portal': 'G1',
                     'Title': response.css('.content-head__title::text').get(),
                     'Time': response.css('time::text').get(),
-                    'Link': rresponse.url,
+                    'Link': response.url,
                     'News': news
                 }
 
