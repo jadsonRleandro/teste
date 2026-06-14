@@ -34,9 +34,7 @@ class r7_spider(scrapy.Spider):
 
 def play_wright():
     # Inicia o Playwright
-    hoje_brasilia = datetime.now(ZoneInfo("America/Sao_Paulo"))
-    print(hoje_brasilia)
-    data = '2026-06-10'
+    data = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d")
     urls = []
     with sync_playwright() as p:
 

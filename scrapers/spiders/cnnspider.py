@@ -4,10 +4,11 @@ import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 class cnn_spider(scrapy.Spider):
     name = 'CNN'
-    data = '2026-06-11'
+    data = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d")
     
     start_urls = [
         "https://www.cnnbrasil.com.br/tudo-sobre/feminicidio/"
