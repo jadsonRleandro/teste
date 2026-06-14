@@ -3,6 +3,9 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from playwright.sync_api import sync_playwright
 from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 
 class g1_spider(scrapy.Spider):
     name = 'g1'
@@ -14,10 +17,15 @@ class g1_spider(scrapy.Spider):
 
         data_da_publicacao = response.css('time').attrib['datetime']
         dia_da_publicacao = data_da_publicacao[8:10]
+        hoje_brasilia = datetime.now(ZoneInfo("America/Sao_Paulo"))
+        
         print("noticia: " + response.url)
         print(dia_da_publicacao)
-        print(date.today().day)
-        if(int(dia_da_publicacao) == date.today().day): # filtrando noticias apenas do dia
+        print(hoje_brasilia)
+
+
+        
+        if(int(dia_da_publicacao) == hoje_brasilia.day:# filtrando noticias apenas do dia
             print("noticia valida")
             alltext = response.css('article p *::text, article p::text').getall()
 
