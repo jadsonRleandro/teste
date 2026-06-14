@@ -16,6 +16,7 @@ class g1_spider(scrapy.Spider):
         dia_da_publicacao = data_da_publicacao[8:10]
         print("noticia: " + response.url)
         print(dia_da_publicacao)
+        print(date.today().day)
         if(int(dia_da_publicacao) == date.today().day): # filtrando noticias apenas do dia
             print("noticia valida")
             alltext = response.css('article p *::text, article p::text').getall()
