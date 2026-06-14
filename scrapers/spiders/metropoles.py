@@ -26,12 +26,12 @@ class metropoles_spider(scrapy.Spider):
         hoje_brasilia = datetime.now(ZoneInfo("America/Sao_Paulo"))
         
         print("noticia: " + response.url)
-        print(data_da_publicacao)
+        print(data_da_publicacao[0:2])
         print(hoje_brasilia)
 
 
         
-        if(int(data_da_publicacao) == hoje_brasilia.day):# filtrando noticias apenas do dia
+        if(int(data_da_publicacao[0:2]) == hoje_brasilia.day):# filtrando noticias apenas do dia
             print("noticia valida")
 
             alltext = response.css('article p *::text, article p::text').getall()
