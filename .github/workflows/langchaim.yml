@@ -1,9 +1,11 @@
-name: executor scraper
+name: executor langchaim
 
 on:
-  schedule:
-    - cron: '55 23 * * *' # Rodar todo dias as 23h
   workflow_dispatch: # Permite o acionamento manual.
+  workflow_run:
+    workflows: ["executor scraper"]
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -26,21 +28,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalar Scrapy
+      - name: Instalar LangChain e dependências
         run: |
-          pip install scrapy
-          pip install playwright
-          playwright install --with-deps firefox
+          pip install langchain
+          pip install json
+          pip install os
 
-      - name: Executar script
-        run: python scrapers/executarSpiders.py
+      - name: Executar LangChain
+        run: python backend/llm/langChain_Controller.py
 
-      - name: Scraper executado, atualizando o repositório
+      - name: LangChain executado, atualizando o repositório
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add scrapers/resultados/*
+          git add backend/llm/
 
           echo "Git status after add:" 
           git status --porcelain

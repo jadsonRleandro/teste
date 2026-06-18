@@ -3,9 +3,6 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from playwright.sync_api import sync_playwright
 from datetime import date
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 
 class g1_spider(scrapy.Spider):
     name = 'g1'
@@ -17,30 +14,21 @@ class g1_spider(scrapy.Spider):
 
         data_da_publicacao = response.css('time').attrib['datetime']
         dia_da_publicacao = data_da_publicacao[8:10]
-        hoje_brasilia = datetime.now(ZoneInfo("America/Sao_Paulo"))
-        
-        print("noticia: " + response.url)
-        print(dia_da_publicacao)
-        print(hoje_brasilia)
 
+        if(int(dia_da_publicacao) == date.today().day): # filtrando noticias apenas do dia
 
-        
-        if(int(dia_da_publicacao) == hoje_brasilia.day):# filtrando noticias apenas do dia
-            print("noticia valida")
-            alltext = response.css('article p *::text, article p::text').getall()
+            alltext = response.css('article p:not(.data)::text').getall()
 
             # colocanto toda a noticia em uma unica string
 
-            news = ' '.join(
-                t.strip()
-                for t in alltext
-                if t.strip() )
-
+            news = ''
+            for text in alltext:
+                news += text
             yield { 
                     'Portal': 'G1',
                     'Title': response.css('.content-head__title::text').get(),
                     'Time': response.css('time::text').get(),
-                    'Link': response.url,
+                    'Link': response.css('main > link').attrib['href'],
                     'News': news
                 }
 
@@ -66,7 +54,6 @@ def play_writght():
             urls.append(news.get_attribute(name = "href"))
         
         browser.close()
-        print(urls)
 
     return urls
 
@@ -120,3 +107,4 @@ def g1_run_spider():
     process = CrawlerProcess(settings)
     process.crawl(g1_spider, urls)
     process.start()
+

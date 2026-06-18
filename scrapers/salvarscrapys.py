@@ -30,7 +30,6 @@ def salvar_todos_resultados():
                 else:
                     todas_noticias.append(dados)
 
-        # Remove duplicados (opcional)
         noticias_unicas = []
         vistos = set()
 

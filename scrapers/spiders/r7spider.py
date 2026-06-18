@@ -4,7 +4,6 @@ from scrapy.utils.project import get_project_settings
 from playwright.sync_api import sync_playwright
 import time
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 class r7_spider(scrapy.Spider):
     name = 'r7'
@@ -13,15 +12,13 @@ class r7_spider(scrapy.Spider):
         self.start_urls = urls or []
 
     def parse(self, response, **kwargs):
-        alltext = response.css('article p *::text, article p::text').getall()
+        alltext = response.css('article span::text').getall()
 
         # colocanto toda a noticia em uma unica string
 
-        news = ' '.join(
-            t.strip()
-            for t in alltext
-            if t.strip() )
-
+        news = ''
+        for text in alltext:
+            news += text
 
         yield { 
                 'portal': 'R7',
@@ -34,7 +31,7 @@ class r7_spider(scrapy.Spider):
 
 def play_wright():
     # Inicia o Playwright
-    data = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d")
+    data = str(datetime.now().strftime("%Y-%m-%d"))
     urls = []
     with sync_playwright() as p:
 
