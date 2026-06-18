@@ -22,5 +22,17 @@
         "title": "Caso Ana Clara: jovem que teve mãos decepadas deixou estudos e academia para evitar brigas com namorado",
         "resumo": "Ana Clara Antero de Oliveira viveu um relacionamento abusivo com o namorado Ronivaldo Rocha dos Santos, que manifestava agressividade e ciúmes, levando-a a deixar estudos e academia. Após uma briga, Ronivaldo mandou seu irmão atacar Ana Clara, que teve as mãos decepadas. O ex-namorado possuía antecedentes por violência doméstica. O caso foi denunciado e aceito pela Justiça como tentativa de feminicídio.",
         "local": "Ceará"
+    },
+    {
+        "feminicidio": "sim",
+        "title": "Suspeito é preso após arrancar parte do lábio da esposa com faca",
+        "resumo": "Um homem foi preso em Pontes e Lacerda, Mato Grosso, após agredir brutalmente a própria esposa na residência do casal. Ele é suspeito de arrancar parte do lábio da vítima com uma faca, além de desferir socos, chutes e bater a cabeça dela contra a parede em um caso de violência doméstica.",
+        "local": "Mato Grosso"
+    },
+    {
+        "feminicidio": "true",
+        "title": "Caso Ana Clara: jovem que teve mãos decepadas deixou estudos e academia para evitar brigas com namorado",
+        "resumo": "Ana Clara Antero de Oliveira teve as mãos decepadas a mando do ex-namorado, Ronivaldo Rocha dos Santos, após um relacionamento abusivo marcado por ciúmes e agressões, onde ela chegou a abandonar estudos e academia. O ataque ocorreu em Quixeramobim e o caso é investigado como tentativa de feminicídio.",
+        "local": "Ceará"
     }
 ]
