@@ -24,14 +24,15 @@ def save_result_to_json(result):
                     news_exists = []
         
         # Verifica se o elemento já existe
-        if result in news_exists:
-            print("Elemento já existe no JSON.")
-            return
-        else:
-            with open(output_path, "w", encoding="utf-8") as f:
-                news_exists.append(result)
-                json.dump(news_exists, f, ensure_ascii=False, indent=4)
-            
+        for news in news_exists:
+            if news.title == result.title:
+                print("Elemento já existe no JSON.")
+                return
+            else:
+                with open(output_path, "w", encoding="utf-8") as f:
+                    news_exists.append(result)
+                    json.dump(news_exists, f, ensure_ascii=False, indent=4)
+                
             
     except json.JSONDecodeError as e:
         print(f"Erro ao decodificar JSON: {e}")
