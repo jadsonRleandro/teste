@@ -1,1 +1,14 @@
-
+[
+    {
+        "feminicidio": "true",
+        "title": "Suspeito é preso após arrancar parte do lábio da esposa com faca",
+        "resumo": "Um homem de 29 anos foi preso suspeito de agredir brutalmente a própria esposa, de 34 anos, em Pontes e Lacerda (MT). Ele a atacou com socos, chutes, bateu a cabeça dela contra a parede e arrancou parte do lábio dela com uma faca.",
+        "local": "Mato Grosso"
+    },
+    {
+        "feminicidio": "true",
+        "title": "Caso Ana Clara: jovem que teve mãos decepadas deixou estudos e academia para evitar brigas com namorado",
+        "resumo": "A jovem Ana Clara Antero de Oliveira sofreu uma tentativa de feminicídio, tendo as mãos decepadas a mando do ex-namorado Ronivaldo Rocha dos Santos, no Ceará. O relacionamento era marcado por violência doméstica, ciúmes e controle, que a fez abandonar estudos e academia. Ronivaldo possuía histórico de lesão corporal e ameaça no contexto de violência doméstica.",
+        "local": "Ceará"
+    }
+]
