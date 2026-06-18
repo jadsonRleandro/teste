@@ -35,6 +35,8 @@ jobs:
           pip install langchain-google-genai
 
       - name: Executar LangChain
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: python backend/llm/langChain_Controller.py
 
       - name: LangChain executado, atualizando o repositório
