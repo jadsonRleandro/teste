@@ -15,7 +15,7 @@ def read_json(path):
 def save_result_to_json(result):
     
     try:
-        output_path = os.path.join("../../backend/llm/news-llm.json")
+        output_path = os.path.join("backend/llm/news-llm.json")
         if os.path.exists(output_path):
             with open(output_path, "r", encoding="utf-8") as f:
                 try:
@@ -41,7 +41,7 @@ def main():
     portais = ["g1", "metropoles", "r7", "cnn"]
 
     for portal in portais:
-        path = os.path.join("../../scrapers/resultados/", f"{portal}.json")
+        path = os.path.join("scrapers/resultados/", f"{portal}.json")
         noticias = read_json(path)
 
         if noticias:
