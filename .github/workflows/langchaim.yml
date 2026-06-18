@@ -31,8 +31,8 @@ jobs:
       - name: Instalar LangChain e dependências
         run: |
           pip install langchain
-          pip install json
-          pip install os
+          pip install python-dotenv
+          langchain-google-genai
 
       - name: Executar LangChain
         run: python backend/llm/langChain_Controller.py
