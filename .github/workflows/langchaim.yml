@@ -32,7 +32,7 @@ jobs:
         run: |
           pip install langchain
           pip install python-dotenv
-          langchain-google-genai
+          pip install langchain-google-genai
 
       - name: Executar LangChain
         run: python backend/llm/langChain_Controller.py
