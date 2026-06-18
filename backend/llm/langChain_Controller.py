@@ -27,10 +27,10 @@ def save_result_to_json(result):
         if result in news_exists:
             print("Elemento já existe no JSON.")
             return
-        
-        with open(output_path, "w", encoding="utf-8") as f:
-            news_exists.append(result)
-            json.dump(news_exists, f, ensure_ascii=False, indent=4)
+        else:
+            with open(output_path, "w", encoding="utf-8") as f:
+                news_exists.append(result)
+                json.dump(news_exists, f, ensure_ascii=False, indent=4)
             
             
     except json.JSONDecodeError as e:
