@@ -22,7 +22,11 @@ def save_result_to_json(result):
                     news_exists = json.load(f)
                 except:
                     news_exists = []
-
+        
+        # Verifica se o elemento já existe
+        if result in news_exists:
+            print("Elemento já existe no JSON.")
+            return
         
         with open(output_path, "w", encoding="utf-8") as f:
             news_exists.append(result)
