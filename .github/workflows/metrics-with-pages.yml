@@ -1,4 +1,3 @@
-
 name: metrics-with-pages
 
 on:
@@ -44,6 +43,8 @@ jobs:
               mkdocstrings-python
         
             pip install -r docs/productivity/requirements.txt
+
+
       - name: Coletor de métricas
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,7 +77,16 @@ jobs:
           echo "Committed. Pushing..."
 
           git push origin HEAD:${{ github.ref_name }}
-          
-      - name: Build MkDocs dentro do React
+
+      - name: Buildando site
         run: |
-          mkdocs build --site-dir dist/docs/mkdocs
+          mkdocs build
+
+      - name: Dando upload em artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Implementando GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
